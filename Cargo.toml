@@ -1,0 +1,18 @@
+[package]
+name = "jvr"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+#windows = { version = "0.57", features = [
+#    "Win32", "Win32_Foundation", "Win32_System_Environment", "Win32_System_LibraryLoader", "Win32_UI", "Win32_System_Registry", "Win32_UI_WindowsAndMessaging",
+#] }
+#windows-registry = "0.1"
+#winapi = "0.3.9"
+
+winreg = "0.52"
+clap = { version = "4.0", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+dirs = "5.0"
+prettytable = "0.10"
