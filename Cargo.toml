@@ -1,6 +1,6 @@
 [package]
 name = "jvr"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 authors = ["photowey <photowey@gmail.com>"]
@@ -15,9 +15,13 @@ A simple and easy-to-use Java version manager(registry: jvr), similar to Node.js
 """
 
 readme = "README.md"
-keywords = ["JDK", "version"]
+keywords = ["cli", "tool", "binary", "JDK", "version"]
 # https://crates.io/category_slugs
 categories = ["command-line-utilities"]
+
+[[bin]]
+name = "jvr"
+path = "src/main.rs"
 
 [dependencies]
 winreg = "0.52"
