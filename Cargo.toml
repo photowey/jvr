@@ -3,13 +3,23 @@ name = "jvr"
 version = "0.1.0"
 edition = "2021"
 
-[dependencies]
-#windows = { version = "0.57", features = [
-#    "Win32", "Win32_Foundation", "Win32_System_Environment", "Win32_System_LibraryLoader", "Win32_UI", "Win32_System_Registry", "Win32_UI_WindowsAndMessaging",
-#] }
-#windows-registry = "0.1"
-#winapi = "0.3.9"
+authors = ["photowey <photowey@gmail.com>"]
+license = "Apache-2.0"
 
+documentation = "https://docs.rs/jvr"
+repository = "https://github.com/photowey/jvr"
+homepage = "https://github.com/photowey/jvr"
+
+description = """
+A simple and easy-to-use Java version manager(registry: jvr), similar to Node.js's nvm,but it does not follow nvm's naming convention. Otherwise, it would benamed 'jvm', which could cause command conflicts or ambiguity.
+"""
+
+readme = "README.md"
+keywords = ["JDK", "version"]
+# https://crates.io/category_slugs
+categories = ["command-line-utilities"]
+
+[dependencies]
 winreg = "0.52"
 clap = { version = "4.0", features = ["derive"] }
 serde = { version = "1.0", features = ["derive"] }
