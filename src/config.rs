@@ -49,7 +49,7 @@ impl Configure {
     }
 
     pub fn store(&self) {
-        let config_path = jvr_home_dir();
+        let config_path = jvr_config_json_path();
         let config_content =
             serde_json::to_string_pretty(self).expect("Failed to serialize config");
         fs::write(config_path, config_content).expect("Failed to write config file");
