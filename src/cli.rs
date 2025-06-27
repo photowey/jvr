@@ -24,7 +24,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Parser)]
 #[command(
     name = "jvr",
-    version = "0.1.0",
+    version = "0.1.2",
     about = "A simple Java version manager(registry: jvr)",
     long_about = "A simple and easy-to-use Java version manager(registry: jvr), similar to Node.js's nvm,\n\
     but it does not follow nvm's naming convention. Otherwise, it would be\n\
