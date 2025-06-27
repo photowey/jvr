@@ -21,7 +21,7 @@ use std::fs;
 use serde::{Deserialize, Serialize};
 
 use crate::cli::Java;
-use crate::home::{jvr_config_json_path, jvr_home_dir};
+use crate::home::jvr_config_json_path;
 
 // ----------------------------------------------------------------
 

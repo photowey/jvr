@@ -37,10 +37,10 @@ pub fn jvr_config_json_path() -> PathBuf {
 }
 
 pub fn jvr_home_dir() -> PathBuf {
-    let mut config_path = home_dir().expect("Failed to get usr home directory");
-    config_path.push(JVR_HOME_DIR_NAME);
+    let mut user_home = home_dir().expect("Failed to get usr home directory");
+    user_home.push(JVR_HOME_DIR_NAME);
 
-    config_path
+    user_home
 }
 
 // ----------------------------------------------------------------
