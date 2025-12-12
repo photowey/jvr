@@ -24,7 +24,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Parser)]
 #[command(
     name = "jvr",
-    version = "0.2.0",
+    version = "0.3.0",
     about = "A simple Java version manager (registry: jvr)",
     long_about = "A simple and easy-to-use Java version manager (registry: jvr), similar to Node.js's nvm,\n\
     but it does not follow nvm's naming convention. Otherwise, it would be\n\
@@ -37,6 +37,11 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
+    #[command(about = "Initialize jvr with a JAVA_HOME path, e.g.: >_ $ jvr init \"/path/to/java_home\"")]
+    Init {
+        #[arg(help = "The path for JAVA_HOME directory")]
+        path: String,
+    },
     #[command(about = "Add a JDK version, e.g.: >_ $ jvr add jdk8 \"/path/to/jdk8\"")]
     Add {
         #[arg(help = "The alias for the JDK version")]

@@ -25,7 +25,7 @@ use std::path::{Path, PathBuf};
 // ----------------------------------------------------------------
 
 /// Unix environment variable accessor
-///
+/// 
 /// Manages user and system environment variables through shell configuration files
 pub struct UnixEnvironmentAccessor {}
 
@@ -111,7 +111,7 @@ impl UnixEnvironmentAccessor {
     }
 
     /// Parses an environment variable line from a shell configuration file
-    ///
+    /// 
     /// Supports formats: `VAR=value`, `VAR="value"`, `VAR='value'`, and `export VAR=value`
     fn parse_env_line(&self, line: &str, name: &str) -> Option<String> {
         if line.starts_with('#') {
@@ -135,7 +135,7 @@ impl UnixEnvironmentAccessor {
     }
 
     /// Writes an environment variable to a shell configuration file
-    ///
+    /// 
     /// If the variable already exists, it will be replaced. Otherwise, it will be appended.
     fn write_env_to_file(&self, file_path: &Path, name: &str, value: &str) -> io::Result<()> {
         let mut content = String::new();
@@ -189,7 +189,7 @@ impl UnixEnvironmentAccessor {
     }
 
     /// Searches for an environment variable in a list of configuration files
-    ///
+    /// 
     /// Returns the first matching value found, or an error if not found in any file
     fn find_env_in_files(&self, files: &[PathBuf], name: &str) -> io::Result<String> {
         for file in files {
@@ -205,7 +205,7 @@ impl UnixEnvironmentAccessor {
     }
 
     /// Writes an environment variable to the first available configuration file
-    ///
+    /// 
     /// Tries to write to existing files first, or creates the first file if none exist
     fn write_env_to_first_available(
         &self,
@@ -233,7 +233,7 @@ impl UnixEnvironmentAccessor {
     }
 
     /// Ensures the PATH environment variable contains the specified entry
-    ///
+    /// 
     /// # Arguments
     /// * `entry` - The entry to add to PATH
     /// * `user` - `true` for user-level, `false` for system-level

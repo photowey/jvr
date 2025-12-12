@@ -33,7 +33,7 @@ use crate::env::EnvironmentAccessor;
 // ----------------------------------------------------------------
 
 /// Windows environment variable accessor
-///
+/// 
 /// Manages user and system environment variables through the Windows registry
 pub struct WindowsEnvironmentAccessor {}
 
@@ -113,7 +113,7 @@ impl WindowsEnvironmentAccessor {
     // ----------------------------------------------------------------
 
     /// Ensures the PATH environment variable contains the specified entry
-    ///
+    /// 
     /// # Arguments
     /// * `entry` - The entry to add to PATH
     /// * `user` - `true` for user-level, `false` for system-level
@@ -165,9 +165,9 @@ impl WindowsEnvironmentAccessor {
     }
 
     /// Converts a string to a Windows registry REG_EXPAND_SZ type value
-    ///
+    /// 
     /// REG_EXPAND_SZ type supports environment variable expansion (e.g., %JAVA_HOME%)
-    ///
+    /// 
     /// # Safety
     /// This method uses `unsafe` code to convert a UTF-16 byte array to a u8 byte array.
     /// This is safe because:

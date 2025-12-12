@@ -30,6 +30,9 @@ use crate::home::jvr_config_json_path;
 /// Stores the list of registered JDK versions and the currently active version
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Configuration {
+    /// The path to the JAVA_HOME directory (set by init command)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub java_home_path: Option<String>,
     /// The alias name of the currently active JDK version
     pub current: Option<String>,
     /// List of all registered JDK versions
@@ -50,6 +53,7 @@ impl Configuration {
             serde_json::from_str(&config_content).expect("Failed to parse config file")
         } else {
             Configuration {
+                java_home_path: None,
                 versions: Vec::new(),
                 current: None,
             }

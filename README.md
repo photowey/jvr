@@ -1,8 +1,16 @@
 # `jvr`
 
-A simple and easy-to-use Java version manager(registry: `jvr`), similar to `Node.js`'s `nvm`,
+A simple and easy-to-use Java version manager (registry: `jvr`), similar to `Node.js`'s `nvm`,
 but it does not follow `nvm`'s naming convention. Otherwise, it would be named `jvm`,
 which could cause command conflicts or ambiguity.
+
+## ✨ What's New in v0.3.0
+
+**Symlink-based architecture for faster JDK switching:**
+- 🚀 **One-time initialization**: Run `jvr init` once to set up JAVA_HOME
+- ⚡ **Fast switching**: Switch between JDKs instantly using symlinks
+- 🔒 **Stable environment**: JAVA_HOME path remains constant, only symlink target changes
+- 📦 **No repeated config**: Environment variables configured once during `init`
 
 ## 0.`Platform Support`
 
@@ -36,33 +44,155 @@ cargo build --release
 
 ## 2.`Usage`
 
-### 2.1.`Commands`
+### 2.1.`Quick Start`
 
-#### 2.1.1`Add`
+**First-time setup (required):**
 
-Register `JDK`
+```shell
+# Step 1: Initialize jvr with a JAVA_HOME path
+$ jvr init /path/to/java_home
+
+# Step 2: Add JDK versions
+$ jvr add jdk8 /path/to/jdk8
+$ jvr add jdk11 /path/to/jdk11
+
+# Step 3: Switch between JDK versions
+$ jvr use jdk11
+```
+
+**Complete Workflow Diagram:**
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant jvr
+    participant Filesystem
+    participant EnvVars
+    
+    Note over User,EnvVars: Step 1: Initialize (One-time)
+    User->>jvr: jvr init ~/.jvr/java_home
+    jvr->>Filesystem: Create JAVA_HOME directory
+    jvr->>EnvVars: Set JAVA_HOME environment variable
+    jvr->>EnvVars: Add JAVA_HOME/bin to PATH
+    jvr->>Filesystem: Save JAVA_HOME path to config.json
+    jvr->>User: Initialized
+    
+    Note over User,EnvVars: Step 2: Add JDK Versions
+    User->>jvr: jvr add jdk8 /path/to/jdk8
+    jvr->>Filesystem: Verify JDK path exists
+    jvr->>Filesystem: Save JDK info to config.json
+    jvr->>User: Added
+    
+    User->>jvr: jvr add jdk11 /path/to/jdk11
+    jvr->>Filesystem: Verify JDK path exists
+    jvr->>Filesystem: Save JDK info to config.json
+    jvr->>User: Added
+    
+    Note over User,EnvVars: Step 3: Switch JDK (Fast)
+    User->>jvr: jvr use jdk11
+    jvr->>Filesystem: Remove old symlink (if exists)
+    jvr->>Filesystem: Create symlink JAVA_HOME to /path/to/jdk11
+    jvr->>Filesystem: Update current JDK in config.json
+    jvr->>User: Switched
+    
+    Note over User,EnvVars: Subsequent switches are instant
+    User->>jvr: jvr use jdk8
+    jvr->>Filesystem: Update symlink JAVA_HOME to /path/to/jdk8
+    jvr->>User: Switched (No env var update needed)
+```
+
+### 2.2.`Commands`
+
+#### 2.2.1`Init` (v0.3.0+)
+
+Initialize `jvr` with a JAVA_HOME path. This command must be run **once** before using other commands.
+
+**What it does:**
+- Creates the JAVA_HOME directory if it doesn't exist
+- Sets the JAVA_HOME environment variable
+- Adds `JAVA_HOME/bin` to your PATH environment variable
+
+```shell
+$ jvr init -h | --help
+$ jvr init <JAVA_HOME_PATH>
+
+# e.g.:
+$ jvr init ~/.jvr/java_home
+$ jvr init "C:\Users\YourName\.jvr\java_home"
+```
+
+**Note:** After running `jvr init`, you may need to reload your shell configuration (Unix) or restart your terminal (Windows) for the environment variables to take effect.
+
+**Command Flow:**
+
+```mermaid
+flowchart TD
+    START(["jvr init path"]) --> CHECK{"Path exists?"}
+    CHECK -->|No| CREATE["Create directory"]
+    CHECK -->|Yes| SET_ENV["Set JAVA_HOME env var"]
+    CREATE --> SET_ENV
+    SET_ENV --> CHECK_PATH{"JAVA_HOME/bin in PATH?"}
+    CHECK_PATH -->|No| ADD_PATH["Add JAVA_HOME/bin to PATH"]
+    CHECK_PATH -->|Yes| SAVE_CONFIG["Save JAVA_HOME path to config.json"]
+    ADD_PATH --> SAVE_CONFIG
+    SAVE_CONFIG --> SUCCESS(["Initialized"])
+    
+    style START fill:#e3f2fd
+    style SUCCESS fill:#c8e6c9
+    style CREATE fill:#fff9c4
+    style SET_ENV fill:#fff9c4
+    style ADD_PATH fill:#fff9c4
+```
+
+#### 2.2.2`Add`
+
+Register a JDK version with an alias name.
 
 ```shell
 $ jvr add -h | --help
 $ jvr add <NAME> <PATH>
 
 # e.g.:
-$ jvr add jdk8 ${YOUR_PATH}/jdk8
-$ jvr add jdk11 ${YOUR_PATH}/jdk11
-$ ...
+$ jvr add jdk8 /usr/lib/jvm/java-8-openjdk
+$ jvr add jdk11 /usr/lib/jvm/java-11-openjdk
+$ jvr add jdk17 "C:\Program Files\Java\jdk-17"
 ```
 
-#### 2.1.2`List`
+**Note:** This command only registers the JDK path. It does not modify environment variables.
 
-List all registered `JDK`s, and use a clear table to list the registrations. The `*` indicates the version currently in use.
+**Command Flow:**
+
+```mermaid
+flowchart TD
+    START(["jvr add name path"]) --> CHECK_EXISTS{"JDK already registered?"}
+    CHECK_EXISTS -->|Yes| EXISTS_MSG["Print: Already added"]
+    CHECK_EXISTS -->|No| CHECK_PATH{"Path exists?"}
+    CHECK_PATH -->|No| ERROR["Error: Path not found"]
+    CHECK_PATH -->|Yes| ADD["Add to versions list"]
+    ADD --> SAVE["Save to config.json"]
+    SAVE --> LIST["Display JDK list"]
+    EXISTS_MSG --> LIST
+    LIST --> END(["Complete"])
+    ERROR --> END
+    
+    style START fill:#e3f2fd
+    style END fill:#c8e6c9
+    style ERROR fill:#ffcdd2
+    style ADD fill:#fff9c4
+    style SAVE fill:#fff9c4
+```
+
+#### 2.2.3`List`
+
+List all registered JDK versions in a formatted table. The `*` indicates the version currently in use.
 
 ```shell
 $ jvr list
 ```
 
-#### 2.1.3`Use`
+#### 2.2.4`Use`
 
-Switch the `JDK` version and automatically update the user's `JAVA_HOME` environment variable.
+Switch to a specific JDK version by creating a symlink from JAVA_HOME to the selected JDK path.
 
 ```shell
 $ jvr use <NAME>
@@ -71,54 +201,131 @@ $ jvr use <NAME>
 $ jvr use jdk11
 ```
 
-**Note for Unix users (Linux/macOS):**
+**How it works (v0.3.0+):**
+- Creates a symlink from the JAVA_HOME path (set by `init`) to the selected JDK path
+- No need to update environment variables after the first `init`
+- Fast switching without modifying system configuration
 
-After using `jvr use`, the `JAVA_HOME` environment variable is written to your shell configuration file
-(e.g., `~/.bashrc`, `~/.zshrc`, `~/.profile`). To apply the changes, you need to:
+**Note:** You must run `jvr init` before using this command.
 
-1. **Reload your shell configuration:**
-   ```shell
-   # For bash
-   source ~/.bashrc
-   # or
-   source ~/.bash_profile
-   
-   # For zsh
-   source ~/.zshrc
-   
-   # For profile
-   source ~/.profile
-   ```
+**Command Flow:**
 
-2. **Or simply open a new terminal window/tab**
+```mermaid
+flowchart TD
+    START(["jvr use name"]) --> CHECK_INIT{"Initialized?"}
+    CHECK_INIT -->|No| INIT_ERROR["Error: Run jvr init first"]
+    CHECK_INIT -->|Yes| FIND_JDK{"Find JDK by name"}
+    FIND_JDK -->|Not found| NOT_FOUND["Error: JDK not found"]
+    FIND_JDK -->|Found| CHECK_PATH{"JDK path exists?"}
+    CHECK_PATH -->|No| PATH_ERROR["Error: Path not found"]
+    CHECK_PATH -->|Yes| REMOVE_OLD{"Old symlink exists?"}
+    REMOVE_OLD -->|Yes| DELETE["Remove old symlink"]
+    REMOVE_OLD -->|No| CREATE_SYMLINK["Create symlink JAVA_HOME to JDK"]
+    DELETE --> CREATE_SYMLINK
+    CREATE_SYMLINK --> UPDATE_CURRENT["Update current JDK in config"]
+    UPDATE_CURRENT --> SAVE["Save config.json"]
+    SAVE --> LIST["Display JDK list"]
+    LIST --> SUCCESS(["Switched"])
+    INIT_ERROR --> END(["Exit"])
+    NOT_FOUND --> END
+    PATH_ERROR --> END
+    
+    style START fill:#e3f2fd
+    style SUCCESS fill:#c8e6c9
+    style INIT_ERROR fill:#ffcdd2
+    style NOT_FOUND fill:#ffcdd2
+    style PATH_ERROR fill:#ffcdd2
+    style CREATE_SYMLINK fill:#fff9c4
+    style UPDATE_CURRENT fill:#fff9c4
+```
 
-The changes will take effect immediately in Windows.
-
-#### 2.1.4`Version`
+#### 2.2.5`Version`
 
 View the version of `jvr` itself.
 
-#### 2.1.5`Open`
+```shell
+$ jvr version
+```
 
-Open the directory where `jvr` `HOME` is located, if applicable.
+#### 2.2.6`Open`
 
-## 3.`Configuration`
+Open the directory where `jvr` configuration is located.
 
-### 3.1.`Configuration File Location`
+```shell
+$ jvr open
+```
+
+## 3.`How It Works (v0.3.0)`
+
+### 3.1.`Symlink-Based Architecture`
+
+`jvr` v0.3.0 uses a symlink-based approach for faster JDK switching:
+
+1. **Initialization (`jvr init`)**: Sets up a fixed JAVA_HOME path and configures environment variables once
+2. **Adding JDKs (`jvr add`)**: Registers JDK paths without modifying environment variables
+3. **Switching JDKs (`jvr use`)**: Creates/updates a symlink from JAVA_HOME to the selected JDK
+
+**Benefits:**
+- ⚡ **Fast switching**: No need to update environment variables on each switch
+- 🔒 **Stable JAVA_HOME**: JAVA_HOME path remains constant, only the symlink target changes
+- 🎯 **One-time setup**: Environment variables configured once during `init`
+
+### 3.1.1.`Architecture Diagram`
+
+```mermaid
+graph TB
+    subgraph UserEnv["User Environment"]
+        JAVA_HOME["JAVA_HOME<br/>(Fixed Path)"]
+        PATH["PATH<br/>(Includes JAVA_HOME/bin)"]
+    end
+    
+    subgraph JvrMgmt["jvr Management"]
+        SYMLINK["Symlink<br/>(JAVA_HOME to JDK)"]
+        CONFIG["config.json<br/>(JDK Registry)"]
+    end
+    
+    subgraph JDKInst["JDK Installations"]
+        JDK8["JDK 8<br/>/path/to/jdk8"]
+        JDK11["JDK 11<br/>/path/to/jdk11"]
+        JDK17["JDK 17<br/>/path/to/jdk17"]
+    end
+    
+    JAVA_HOME -->|Points to| SYMLINK
+    SYMLINK -->|Links to| JDK11
+    CONFIG -->|Stores| JDK8
+    CONFIG -->|Stores| JDK11
+    CONFIG -->|Stores| JDK17
+    
+    style JAVA_HOME fill:#e1f5ff
+    style SYMLINK fill:#fff4e1
+    style CONFIG fill:#e8f5e9
+    style JDK11 fill:#ffebee
+```
+
+### 3.2.`Configuration File Location`
 
 `jvr` stores its configuration in:
 
 - **Windows**: `%USERPROFILE%\.jvr\config.json`
 - **Linux/macOS**: `~/.jvr/config.json`
 
-### 3.2.`Environment Variables`
+The configuration file stores:
+- The JAVA_HOME path (set by `init`)
+- List of registered JDK versions
+- Currently active JDK alias
 
-`jvr` automatically manages the following environment variables:
+### 3.3.`Environment Variables`
 
-- **JAVA_HOME**: Set to the currently active JDK path
+`jvr` manages the following environment variables:
+
+- **JAVA_HOME**: Set to the path specified in `jvr init` (configured once)
 - **PATH**: Automatically includes `$JAVA_HOME/bin` (Unix) or `%JAVA_HOME%\bin` (Windows)
 
-### 3.3.`Shell Configuration Files (Unix)`
+**Important:** After running `jvr init`, you need to:
+- **Unix**: Reload your shell configuration (`source ~/.bashrc` or `source ~/.zshrc`)
+- **Windows**: Restart your terminal or log out and log back in
+
+### 3.4.`Shell Configuration Files (Unix)`
 
 On Unix systems (Linux/macOS), `jvr` automatically detects your shell and writes environment variables to the appropriate configuration file:
 
@@ -130,49 +337,109 @@ The tool will use the first available file in the list above.
 
 ## 4.`Examples`
 
-### 4.1.`Basic Usage`
+### 4.1.`Complete Workflow`
 
 ```shell
-# Add JDK versions
+# Step 1: Initialize jvr (one-time setup)
+$ jvr init ~/.jvr/java_home
+✅ Created JAVA_HOME directory: /home/user/.jvr/java_home
+✅ jvr initialized successfully!
+   JAVA_HOME: /home/user/.jvr/java_home
+   Use 'jvr use <alias>' to switch between JDK versions.
+
+# Reload shell configuration (Unix only)
+$ source ~/.bashrc  # or ~/.zshrc
+
+# Step 2: Add JDK versions
 $ jvr add jdk8 /usr/lib/jvm/java-8-openjdk
+✅ Added JDK version: ['jdk8']
+
 $ jvr add jdk11 /usr/lib/jvm/java-11-openjdk
+✅ Added JDK version: ['jdk11']
+
 $ jvr add jdk17 /usr/lib/jvm/java-17-openjdk
+✅ Added JDK version: ['jdk17']
 
-# List all registered JDKs
+# Step 3: List all registered JDKs
 $ jvr list
++-----+-------+----------------------------------+---------+
+| #   | Alias | Path                             | Current |
++=====+=======+==================================+=========+
+| 1   | jdk8  | /usr/lib/jvm/java-8-openjdk      | -       |
+| 2   | jdk11 | /usr/lib/jvm/java-11-openjdk     | -       |
+| 3   | jdk17 | /usr/lib/jvm/java-17-openjdk     | -       |
++-----+-------+----------------------------------+---------+
 
-# Switch to a specific JDK version
+# Step 4: Switch to a specific JDK version
 $ jvr use jdk17
+✅ Now using JDK jdk17 at /usr/lib/jvm/java-17-openjdk
+   JAVA_HOME symlink: /home/user/.jvr/java_home -> /usr/lib/jvm/java-17-openjdk
 
-# Verify the change (Unix)
+# Verify the change
 $ echo $JAVA_HOME
-$ java -version
+/home/user/.jvr/java_home
 
-# Verify the change (Windows)
-$ echo %JAVA_HOME%
 $ java -version
+openjdk version "17.0.x" ...
+
+# Switch to another JDK (fast, no environment variable update needed)
+$ jvr use jdk11
+✅ Now using JDK jdk11 at /usr/lib/jvm/java-11-openjdk
+   JAVA_HOME symlink: /home/user/.jvr/java_home -> /usr/lib/jvm/java-11-openjdk
 ```
 
 ### 4.2.`Platform-Specific Examples`
 
 **Windows:**
 ```shell
+# Initialize
+$ jvr init "C:\Users\YourName\.jvr\java_home"
+✅ Created JAVA_HOME directory: C:\Users\YourName\.jvr\java_home
+✅ jvr initialized successfully!
+
+# Add and use JDKs
 $ jvr add jdk21 "C:\Program Files\Java\jdk-21"
 $ jvr use jdk21
+✅ Now using JDK jdk21 at C:\Program Files\Java\jdk-21
+   JAVA_HOME symlink: C:\Users\YourName\.jvr\java_home -> C:\Program Files\Java\jdk-21
 ```
 
 **Linux/macOS:**
 ```shell
+# Initialize
+$ jvr init ~/.jvr/java_home
+✅ Created JAVA_HOME directory: /home/user/.jvr/java_home
+✅ jvr initialized successfully!
+
+# Reload shell
+$ source ~/.bashrc  # or ~/.zshrc
+
+# Add and use JDKs
 $ jvr add jdk21 /usr/lib/jvm/java-21-openjdk
 $ jvr use jdk21
-$ source ~/.bashrc  # or ~/.zshrc
+✅ Now using JDK jdk21 at /usr/lib/jvm/java-21-openjdk
+   JAVA_HOME symlink: /home/user/.jvr/java_home -> /usr/lib/jvm/java-21-openjdk
 ```
 
 ## 5.`Troubleshooting`
 
-### 5.1.`Environment Variable Not Updated (Unix)`
+### 5.1.`"jvr has not been initialized" Error`
 
-If `JAVA_HOME` is not updated after using `jvr use`:
+If you see this error when running `jvr use`:
+
+```
+❌ jvr has not been initialized. Please run 'jvr init <JAVA_HOME_PATH>' first.
+```
+
+**Solution:** Run `jvr init` with a JAVA_HOME path before using other commands:
+
+```shell
+$ jvr init ~/.jvr/java_home
+```
+
+### 5.2.`Environment Variable Not Updated After Init (Unix)`
+
+If `JAVA_HOME` is not set after running `jvr init`:
 
 1. Check if the environment variable was written to your shell config file:
    ```shell
@@ -186,17 +453,52 @@ If `JAVA_HOME` is not updated after using `jvr use`:
    $ source ~/.bashrc  # or ~/.zshrc
    ```
 
-3. Verify in a new terminal window.
+3. Verify in a new terminal window:
+   ```shell
+   $ echo $JAVA_HOME
+   ```
 
-### 5.2.`Permission Denied (Unix)`
+### 5.3.`Symlink Creation Failed`
 
-If you encounter permission errors when setting system environment variables, you may need to use `sudo`:
+If you encounter errors when switching JDK versions:
+
+**Windows:**
+- Ensure you have administrator privileges or developer mode enabled for creating symlinks
+- Check if the JAVA_HOME directory exists and is writable
+
+**Unix:**
+- Ensure you have write permissions to the JAVA_HOME directory
+- Check if the target JDK path exists and is accessible
+
+### 5.4.`Permission Denied (Unix)`
+
+If you encounter permission errors:
 
 ```shell
-$ sudo jvr use <NAME>
+# Check permissions
+$ ls -la ~/.jvr/
+
+# Fix permissions if needed
+$ chmod 755 ~/.jvr/java_home
 ```
 
-However, it's recommended to use user-level environment variables instead.
+**Note:** It's recommended to use user-level directories (like `~/.jvr/java_home`) to avoid permission issues.
+
+### 5.5.`JDK Path Does Not Exist`
+
+If you see this error when adding or using a JDK:
+
+```
+❌ JDK path does not exist: /path/to/jdk
+```
+
+**Solution:** Verify the JDK path is correct and the directory exists:
+
+```shell
+$ ls -la /path/to/jdk
+# or on Windows
+$ dir "C:\path\to\jdk"
+```
 
 ## 6.`License`
 

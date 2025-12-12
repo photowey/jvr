@@ -21,7 +21,7 @@ use clap::Parser;
 use jvr::cli::{Cli, Commands};
 use jvr::config::Configuration;
 use jvr::home;
-use jvr::jdk::{add_jdk, list_jdks, use_jdk};
+use jvr::jdk::{add_jdk, init_jdk, list_jdks, use_jdk};
 
 // ----------------------------------------------------------------
 
@@ -30,6 +30,9 @@ fn main() {
     let mut config = Configuration::default();
 
     match &cli.command {
+        Commands::Init { path } => {
+            init_jdk(&mut config, path);
+        }
         Commands::Add { name, path } => {
             add_jdk(&mut config, name, path);
 
@@ -56,14 +59,14 @@ fn show_version() {
 }
 
 /*
-cargo run -- add jdk8 /path/to/jdk8
-cargo run -- add jdk11 /path/to/jdk11
-cargo run -- add jdk17 /path/to/jdk17
-cargo run -- add jdk19 /path/to/jdk19
-cargo run -- add jdk21 /path/to/jdk21
+cargo run -- add jdk8 "/Path/to/jdk8"
+cargo run -- add jdk11 "/Path/to/jdk11"
+cargo run -- add jdk17 "/Path/to/jdk17"
+cargo run -- add jdk19 "/Path/to/jdk19"
+cargo run -- add jdk21 "/Path/to/jdk21"
 
-cargo run -- add graalvm17 /path/to/graalvm17
-cargo run -- add graalvm19 /path/to/graalvm19
+cargo run -- add graalvm17 "/Path/to/graalvm17"
+cargo run -- add graalvm19 "/Path/to/graalvm19"
 
 cargo run -- list
 cargo run -- use jdk21

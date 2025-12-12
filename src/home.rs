@@ -49,6 +49,64 @@ pub fn jvr_home_dir() -> PathBuf {
     user_home
 }
 
+/// Creates a symlink from target to link path
+/// 
+/// On Windows, creates a directory junction or symlink depending on the target type.
+/// On Unix, creates a symbolic link.
+/// 
+/// # Arguments
+/// * `target` - The target path that the symlink will point to
+/// * `link` - The path where the symlink will be created
+pub fn create_symlink(target: &std::path::Path, link: &std::path::Path) -> std::io::Result<()> {
+    // Remove existing link or directory if it exists
+    if link.exists() {
+        #[cfg(target_os = "windows")]
+        {
+            // On Windows, check if it's a directory or file
+            if link.is_dir() {
+                std::fs::remove_dir_all(link)?;
+            } else {
+                std::fs::remove_file(link)?;
+            }
+        }
+        #[cfg(not(target_os = "windows"))]
+        {
+            // On Unix, check if it's a symlink or regular file/directory
+            if link.is_symlink() {
+                std::fs::remove_file(link)?;
+            } else if link.is_dir() {
+                std::fs::remove_dir_all(link)?;
+            } else {
+                std::fs::remove_file(link)?;
+            }
+        }
+    }
+
+    // Create parent directory if it doesn't exist
+    if let Some(parent) = link.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+
+    // Create the symlink
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::fs;
+        // JAVA_HOME is always a directory, so we use symlink_dir
+        if target.is_dir() {
+            fs::symlink_dir(target, link)?;
+        } else {
+            fs::symlink_file(target, link)?;
+        }
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        use std::os::unix::fs;
+        fs::symlink(target, link)?;
+    }
+
+    Ok(())
+}
+
 // ----------------------------------------------------------------
 
 /// Opens the jvr home directory in the system's default file manager
