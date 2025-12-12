@@ -19,7 +19,7 @@
 use clap::Parser;
 
 use jvr::cli::{Cli, Commands};
-use jvr::config::Configure;
+use jvr::config::Configuration;
 use jvr::home;
 use jvr::jdk::{add_jdk, list_jdks, use_jdk};
 
@@ -27,19 +27,19 @@ use jvr::jdk::{add_jdk, list_jdks, use_jdk};
 
 fn main() {
     let cli = Cli::parse();
-    let mut configer = Configure::default();
+    let mut config = Configuration::default();
 
     match &cli.command {
         Commands::Add { name, path } => {
-            add_jdk(&mut configer, name, path);
+            add_jdk(&mut config, name, path);
 
-            configer.store();
+            config.store();
         }
         Commands::List => {
-            list_jdks(&configer);
+            list_jdks(&config);
         }
         Commands::Use { name } => {
-            use_jdk(&mut configer, name);
+            use_jdk(&mut config, name);
         }
         Commands::Version => {
             show_version();
@@ -52,18 +52,18 @@ fn main() {
 
 fn show_version() {
     let version = env!("CARGO_PKG_VERSION");
-    println!("jvr version {}", version);
+    println!("jvr version: {}", version);
 }
 
 /*
-cargo run -- add jdk8 "D:\software\jdkws\jdk8"
-cargo run -- add jdk11 "D:\software\jdkws\jdk11"
-cargo run -- add jdk17 "D:\software\jdkws\jdk17"
-cargo run -- add jdk19 "D:\software\jdkws\jdk19"
-cargo run -- add jdk21 "D:\software\jdkws\jdk21"
+cargo run -- add jdk8 /path/to/jdk8
+cargo run -- add jdk11 /path/to/jdk11
+cargo run -- add jdk17 /path/to/jdk17
+cargo run -- add jdk19 /path/to/jdk19
+cargo run -- add jdk21 /path/to/jdk21
 
-cargo run -- add graalvm17 "D:\software\jdkws\graalvm17"
-cargo run -- add graalvm19 "D:\software\jdkws\graalvm19"
+cargo run -- add graalvm17 /path/to/graalvm17
+cargo run -- add graalvm19 /path/to/graalvm19
 
 cargo run -- list
 cargo run -- use jdk21

@@ -18,10 +18,14 @@
 
 use std::io;
 
+#[cfg(target_os = "windows")]
 use crate::os_windows;
+#[cfg(not(target_os = "windows"))]
+use crate::os_unix;
 
 // ----------------------------------------------------------------
 
+/// Trait for accessing and modifying environment variables on different operating systems
 pub trait EnvironmentAccessor {
     fn set_user_environment_variable(&self, name: &str, value: &str) -> io::Result<()>;
 
@@ -30,15 +34,32 @@ pub trait EnvironmentAccessor {
     fn set_system_environment_variable(&self, name: &str, value: &str) -> io::Result<()>;
 
     fn get_system_environment_variable(&self, name: &str) -> io::Result<String>;
+
+    fn broadcast_environment_change(&self) -> io::Result<()> {
+        Ok(())
+    }
+    fn ensure_java_home_bin_in_user_path(&self) -> io::Result<()> {
+        Ok(())
+    }
+
+    fn ensure_java_home_bin_in_system_path(&self) -> io::Result<()> {
+        Ok(())
+    }
 }
 
 // ----------------------------------------------------------------
 
+/// Creates an OS-specific environment variable accessor
+/// 
+/// Returns `WindowsEnvironmentAccessor` on Windows, `UnixEnvironmentAccessor` on Unix systems (Linux/macOS)
 pub fn create_os_environment_handler() -> Box<dyn EnvironmentAccessor> {
-    let os = std::env::consts::OS;
+    #[cfg(target_os = "windows")]
+    {
+        Box::new(os_windows::WindowsEnvironmentAccessor::default())
+    }
 
-    match os {
-        "windows" => Box::new(os_windows::WindowsEnvironmentAccessor::default()),
-        _ => panic!("Unsupported OS: [{}] now", os),
+    #[cfg(not(target_os = "windows"))]
+    {
+        Box::new(os_unix::UnixEnvironmentAccessor::default())
     }
 }

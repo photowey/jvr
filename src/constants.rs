@@ -17,6 +17,8 @@
 // ----------------------------------------------------------------
 
 pub const JAVA_HOME: &str = "JAVA_HOME";
+pub const JAVA_HOME_BIN: &str = "$JAVA_HOME/bin"; // Unix format
+pub const JAVA_HOME_BIN_WINDOWS: &str = r"%JAVA_HOME%\bin"; // Windows format
 
 // ----------------------------------------------------------------
 
@@ -31,3 +33,12 @@ pub const JVR_OS_WINDOWS_ENVIRONMENT_SYSTEM_SUB_KEY: &str =
     r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment";
 
 // ----------------------------------------------------------------
+
+pub const OS_WINDOWS: &str = "windows";
+pub const OS_LINUX: &str = "linux";
+pub const OS_MACOS: &str = "macos";
+
+// ----------------------------------------------------------------
+
+pub const PATH_ENVIRONMENT_VARIABLE_WINDOWS: &str = "Path";
+pub const PATH_ENVIRONMENT_VARIABLE_UNIX: &str = "PATH";

@@ -19,29 +19,46 @@
 use prettytable::{Cell, Row, Table};
 
 use crate::cli::Java;
-use crate::config::Configure;
+use crate::config::Configuration;
 use crate::constants::JAVA_HOME;
 use crate::env::create_os_environment_handler;
 
 // ----------------------------------------------------------------
 
-pub fn add_jdk(configure: &mut Configure, name: &str, path: &str) {
-    if configure.versions.iter().any(|v| v.name == name) {
-        println!("JDK version ['{}'] already exists.", name);
+/// Adds a new JDK version to the configuration
+/// 
+/// # Arguments
+/// * `config` - The configuration to update
+/// * `name` - The alias name for the JDK version
+/// * `path` - The home directory path of the JDK installation
+pub fn add_jdk(config: &mut Configuration, name: &str, path: &str) {
+    if config.versions.iter().any(|v| v.name == name) {
+        println!("➕ JDK {} has already been added.", name);
     } else {
-        configure.versions.push(Java::new(name, path));
-        println!("Added JDK version: ['{}']", name);
+        config.versions.push(Java::new(name, path));
+        println!("✅ Added JDK version: ['{}']", name);
 
         let accessor = create_os_environment_handler();
         accessor
             .set_user_environment_variable(JAVA_HOME, &path)
-            .expect("Failed to set user environment variable.");
+            .expect(
+                "❌ Could not set `JAVA_HOME` in the user environment variables.\
+                 Please ensure you have write permissions, or set it manually.",
+            );
+
+        accessor.ensure_java_home_bin_in_user_path().expect(
+            "❌ Could not update the PATH environment variable automatically. \
+            To fix this, please add `$JAVA_HOME/bin` (Unix) or `%JAVA_HOME%\\bin` (Windows) to your system's PATH manually.",
+        );
     }
 
-    list_jdks(configure);
+    list_jdks(config);
 }
 
-pub fn list_jdks(configure: &Configure) {
+/// Lists all registered JDK versions in a formatted table
+/// 
+/// The table shows the index, alias name, path, and current status (marked with *)
+pub fn list_jdks(config: &Configuration) {
     let mut table = Table::new();
     table.set_format(*prettytable::format::consts::FORMAT_DEFAULT);
 
@@ -52,8 +69,8 @@ pub fn list_jdks(configure: &Configure) {
         Cell::new("Current").style_spec("c"),
     ]));
 
-    for (index, version) in configure.versions.iter().enumerate() {
-        let is_current = match &configure.current {
+    for (index, version) in config.versions.iter().enumerate() {
+        let is_current = match &config.current {
             Some(current) if current == &version.name => "*",
             _ => "-",
         };
@@ -68,21 +85,31 @@ pub fn list_jdks(configure: &Configure) {
     table.printstd();
 }
 
-pub fn use_jdk(configure: &mut Configure, name: &str) {
-    if let Some(version) = configure.versions.iter().find(|v| v.name == name) {
-        configure.current = Some(name.to_string());
+/// Switches to a specific JDK version
+/// 
+/// Updates the JAVA_HOME environment variable and marks the version as current
+/// 
+/// # Arguments
+/// * `config` - The configuration to update
+/// * `name` - The alias name of the JDK version to use
+pub fn use_jdk(config: &mut Configuration, name: &str) {
+    if let Some(version) = config.versions.iter().find(|v| v.name == name) {
+        config.current = Some(name.to_string());
         let path = version.home.clone();
-        println!("Switched to JDK version: {} ({})", name, path.clone());
+        println!("✅ Now using JDK {} at {}", name, path.clone());
 
         let accessor = create_os_environment_handler();
         accessor
             .set_user_environment_variable(JAVA_HOME, &path.clone())
-            .expect("Failed to set user environment variable.");
+            .expect(
+                "❌ Could not set `JAVA_HOME` in the user environment variables.\
+                 Please ensure you have write permissions, or set it manually.",
+            );
 
-        configure.store();
+        config.store();
     } else {
-        println!("JDK version not found: {}", name);
+        eprintln!("❌ JDK version not found: {}", name);
     }
 
-    list_jdks(configure);
+    list_jdks(config);
 }

@@ -24,9 +24,9 @@ use serde::{Deserialize, Serialize};
 #[derive(Parser)]
 #[command(
     name = "jvr",
-    version = "0.1.2",
-    about = "A simple Java version manager(registry: jvr)",
-    long_about = "A simple and easy-to-use Java version manager(registry: jvr), similar to Node.js's nvm,\n\
+    version = "0.2.0",
+    about = "A simple Java version manager (registry: jvr)",
+    long_about = "A simple and easy-to-use Java version manager (registry: jvr), similar to Node.js's nvm,\n\
     but it does not follow nvm's naming convention. Otherwise, it would be\n\
     named 'jvm', which could cause command conflicts or ambiguity."
 )]
@@ -37,7 +37,7 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
-    #[command(about = "Add a JDK version, e.g.: >_ $ jvr add jdk8 \"${YOUR_HOME}/jdkws/jdk8\"")]
+    #[command(about = "Add a JDK version, e.g.: >_ $ jvr add jdk8 \"/path/to/jdk8\"")]
     Add {
         #[arg(help = "The alias for the JDK version")]
         name: String,
@@ -54,13 +54,17 @@ pub enum Commands {
     Open,
 }
 
+/// Represents a JDK installation with an alias name and home directory path
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Java {
+    /// The alias name for this JDK version
     pub name: String,
+    /// The home directory path of this JDK installation
     pub home: String,
 }
 
 impl Java {
+    /// Creates a new Java instance with the given name and path
     pub fn new(name: &str, path: &str) -> Self {
         Self {
             name: name.to_string(),

@@ -25,15 +25,23 @@ use crate::home::jvr_config_json_path;
 
 // ----------------------------------------------------------------
 
+/// Configuration structure for jvr
+/// 
+/// Stores the list of registered JDK versions and the currently active version
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Configure {
+pub struct Configuration {
+    /// The alias name of the currently active JDK version
     pub current: Option<String>,
+    /// List of all registered JDK versions
     pub versions: Vec<Java>,
 }
 
 // ----------------------------------------------------------------
 
-impl Configure {
+impl Configuration {
+    /// Creates a new Configuration instance by loading from the config file
+    /// 
+    /// If the config file doesn't exist, returns a default empty configuration
     pub fn new() -> Self {
         let config_path = jvr_config_json_path();
         if config_path.exists() {
@@ -41,13 +49,14 @@ impl Configure {
                 fs::read_to_string(config_path).expect("Failed to read config file");
             serde_json::from_str(&config_content).expect("Failed to parse config file")
         } else {
-            Configure {
+            Configuration {
                 versions: Vec::new(),
                 current: None,
             }
         }
     }
 
+    /// Saves the configuration to the config file
     pub fn store(&self) {
         let config_path = jvr_config_json_path();
         let config_content =
@@ -56,7 +65,7 @@ impl Configure {
     }
 }
 
-impl Default for Configure {
+impl Default for Configuration {
     fn default() -> Self {
         Self::new()
     }

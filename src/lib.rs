@@ -25,5 +25,9 @@ pub mod jdk;
 // ----------------------------------------------------------------
 
 pub mod home;
+
+#[cfg(not(target_os = "windows"))]
 pub mod os_unix;
+
+#[cfg(target_os = "windows")]
 pub mod os_windows;

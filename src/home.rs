@@ -26,8 +26,11 @@ use crate::constants::{JVR_CONFIGURE_FILE_NAME, JVR_HOME_DIR_NAME};
 
 // ----------------------------------------------------------------
 
+/// Returns the path to the jvr configuration JSON file
+/// 
+/// The configuration file is located at `~/.jvr/config.json` (Unix) or `%USERPROFILE%\.jvr\config.json` (Windows)
 pub fn jvr_config_json_path() -> PathBuf {
-    let mut config_path = home_dir().expect("Failed to get usr home directory");
+    let mut config_path = home_dir().expect("Failed to get user home directory");
     config_path.push(JVR_HOME_DIR_NAME);
 
     fs::create_dir_all(&config_path).expect("Failed to create jvr home directory");
@@ -36,8 +39,11 @@ pub fn jvr_config_json_path() -> PathBuf {
     config_path
 }
 
+/// Returns the path to the jvr home directory
+/// 
+/// The home directory is located at `~/.jvr` (Unix) or `%USERPROFILE%\.jvr` (Windows)
 pub fn jvr_home_dir() -> PathBuf {
-    let mut user_home = home_dir().expect("Failed to get usr home directory");
+    let mut user_home = home_dir().expect("Failed to get user home directory");
     user_home.push(JVR_HOME_DIR_NAME);
 
     user_home
@@ -45,6 +51,9 @@ pub fn jvr_home_dir() -> PathBuf {
 
 // ----------------------------------------------------------------
 
+/// Opens the jvr home directory in the system's default file manager
+/// 
+/// On Windows, uses `explorer`. On macOS, uses `open`. On Linux, uses `xdg-open`.
 pub fn open_jvr_directory() {
     let jvr_dir = jvr_home_dir();
     if cfg!(target_os = "windows") {
