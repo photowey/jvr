@@ -59,6 +59,7 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Build binary
+        shell: bash
         run: |
           if ${{ matrix.use-cross }}; then
             cross build --target ${{ matrix.target }} --release
