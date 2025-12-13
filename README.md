@@ -4,13 +4,13 @@ A simple and easy-to-use Java version manager (registry: `jvr`), similar to `Nod
 but it does not follow `nvm`'s naming convention. Otherwise, it would be named `jvm`,
 which could cause command conflicts or ambiguity.
 
-## ✨ What's New in v0.3.0
+## ✨ What's New in v0.3.1
+**Enhanced environment management & safer PATH handling:**
 
-**Symlink-based architecture for faster JDK switching:**
-- 🚀 **One-time initialization**: Run `jvr init` once to set up JAVA_HOME
-- ⚡ **Fast switching**: Switch between JDKs instantly using symlinks
-- 🔒 **Stable environment**: JAVA_HOME path remains constant, only symlink target changes
-- 📦 **No repeated config**: Environment variables configured once during `init`
+- 🛠 Improved environment handling: JAVA_HOME and $JAVA_HOME/bin PATH updates now fully managed in a single block
+- 🧩 Safer PATH updates: Avoids issues when PATH references JAVA_HOME before it's defined
+- 🔄 Reliable switching: Changing JDK versions automatically updates both JAVA_HOME and PATH in one atomic block
+- 📄 Cleaner shell configs: Adds a dedicated # >>> jvr managed >>> ... <<< block, preventing conflicts with existing user configs
 
 ## 0.`Platform Support`
 

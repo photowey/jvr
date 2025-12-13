@@ -26,6 +26,9 @@ pub const JVR_CMD_NAME: &str = "jvr";
 pub const JVR_HOME_DIR_NAME: &str = ".jvr";
 pub const JVR_CONFIGURE_FILE_NAME: &str = "config.json";
 
+pub const JVR_BEGIN: &str = "# >>> jvr managed >>>";
+pub const JVR_END: &str = "# <<< jvr managed <<<";
+
 // ----------------------------------------------------------------
 
 pub const JVR_OS_WINDOWS_ENVIRONMENT_USER_SUB_KEY: &str = "Environment";

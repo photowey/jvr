@@ -16,7 +16,7 @@
 
 // ----------------------------------------------------------------
 
-use crate::constants::{JAVA_HOME_BIN, PATH_ENVIRONMENT_VARIABLE_UNIX};
+use crate::constants::{JAVA_HOME_BIN, JVR_BEGIN, JVR_END, PATH_ENVIRONMENT_VARIABLE_UNIX};
 use crate::env::EnvironmentAccessor;
 use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, BufReader, Read, Write};
@@ -25,7 +25,7 @@ use std::path::{Path, PathBuf};
 // ----------------------------------------------------------------
 
 /// Unix environment variable accessor
-/// 
+///
 /// Manages user and system environment variables through shell configuration files
 pub struct UnixEnvironmentAccessor {}
 
@@ -111,7 +111,7 @@ impl UnixEnvironmentAccessor {
     }
 
     /// Parses an environment variable line from a shell configuration file
-    /// 
+    ///
     /// Supports formats: `VAR=value`, `VAR="value"`, `VAR='value'`, and `export VAR=value`
     fn parse_env_line(&self, line: &str, name: &str) -> Option<String> {
         if line.starts_with('#') {
@@ -135,35 +135,72 @@ impl UnixEnvironmentAccessor {
     }
 
     /// Writes an environment variable to a shell configuration file
-    /// 
+    ///
     /// If the variable already exists, it will be replaced. Otherwise, it will be appended.
     fn write_env_to_file(&self, file_path: &Path, name: &str, value: &str) -> io::Result<()> {
         let mut content = String::new();
 
         if file_path.exists() {
-            let mut file = File::open(file_path)?;
-            file.read_to_string(&mut content)?;
+            File::open(file_path)?.read_to_string(&mut content)?;
         }
 
-        let export_line = format!("export {}={}", name, self.quote_value(value));
-        let pattern = format!("export {}", name);
+        let quoted = self.quote_value(value);
+        let export_assign = format!("export {}={}", name, quoted);
+        let assign = format!("{}={}", name, quoted);
 
-        let lines: Vec<&str> = content.lines().collect();
-        let mut new_lines: Vec<String> = Vec::new();
-        let mut found = false;
+        let mut has_export = false;
+        let mut has_export_assign = false;
+        let mut has_assign = false;
 
-        for line in lines {
+        for line in content.lines() {
             let trimmed = line.trim();
-            if trimmed.starts_with(&pattern) && trimmed.contains('=') {
-                new_lines.push(export_line.clone());
-                found = true;
-            } else {
-                new_lines.push(line.to_string());
+
+            if trimmed.starts_with('#') {
+                continue;
+            }
+
+            let (exported, export_assigned) = self.export_line_contains(trimmed, name);
+            if exported {
+                has_export = true;
+            }
+            if export_assigned {
+                has_export_assign = true;
+            }
+
+            if self.is_assign_line(trimmed, name) {
+                has_assign = true;
             }
         }
 
-        if !found {
-            new_lines.push(export_line);
+        let mut new_lines = Vec::new();
+
+        for line in content.lines() {
+            let trimmed = line.trim();
+
+            // 1: export NAME=xxx
+            if has_export_assign {
+                let (_, export_assigned) = self.export_line_contains(trimmed, name);
+                if export_assigned {
+                    new_lines.push(export_assign.clone());
+                    continue;
+                }
+            }
+
+            // 2: NAME=xxx + export NAME(...)
+            if !has_export_assign && has_assign && has_export && self.is_assign_line(trimmed, name)
+            {
+                new_lines.push(assign.clone());
+                continue;
+            }
+
+            new_lines.push(line.to_string());
+        }
+
+        if !has_export_assign && !(has_assign && has_export) {
+            if !new_lines.is_empty() {
+                new_lines.push(String::new());
+            }
+            new_lines.push(self.build_managed_block(&export_assign));
         }
 
         let mut file = OpenOptions::new()
@@ -188,8 +225,76 @@ impl UnixEnvironmentAccessor {
         }
     }
 
+    /// Checks whether an `export ...` line contains the given variable
+    /// Supports:
+    ///   export NAME
+    ///   export A B NAME C
+    ///   export NAME=value
+    ///   export A=value NAME=value
+    fn export_line_contains(&self, line: &str, name: &str) -> (bool, bool) {
+        let trimmed = line.trim();
+
+        if !trimmed.starts_with("export ") {
+            return (false, false);
+        }
+
+        let rest = trimmed.strip_prefix("export ").unwrap();
+
+        let mut has_export = false;
+        let mut has_export_assign = false;
+
+        for token in rest.split_whitespace() {
+            if token == name {
+                has_export = true;
+            } else if token.starts_with(&format!("{}=", name)) {
+                has_export = true;
+                has_export_assign = true;
+            }
+        }
+
+        (has_export, has_export_assign)
+    }
+
+    /// Checks whether a line is a simple assignment: NAME=xxx
+    fn is_assign_line(&self, line: &str, name: &str) -> bool {
+        let trimmed = line.trim();
+        trimmed.starts_with(&format!("{}=", name))
+    }
+
+    /// Builds the `jvr` managed environment block.
+    ///
+    /// This block is fully controlled by `jvr` and guarantees:
+    /// 1. The environment variable (e.g. JAVA_HOME) is defined and exported.
+    /// 2. `$<VAR>/bin` is appended to PATH *after* the variable is defined,
+    ///    ensuring correct shell evaluation order.
+    ///
+    /// Example (when managing JAVA_HOME):
+    ///
+    /// ```sh
+    /// # >>> jvr managed >>>
+    /// export JAVA_HOME=/path/to/jdk21
+    /// export PATH=$PATH:$JAVA_HOME/bin
+    /// # <<< jvr managed <<<
+    /// ```
+    ///
+    /// Notes:
+    /// - The entire block is treated as an atomic unit:
+    ///   if it already exists in a shell configuration file, it will be
+    ///   replaced as a whole; otherwise, it will be appended.
+    /// - Users may define or export JAVA_HOME elsewhere, but `jvr` only
+    ///   guarantees correctness within this managed block.
+    fn build_managed_block(&self, export_assign: &str) -> String {
+        format!(
+            "{}\n\
+         {}\n\
+         export PATH=$PATH:{}\n\
+         {}",
+            JVR_BEGIN, export_assign, JAVA_HOME_BIN, JVR_END
+        )
+    }
+
     /// Searches for an environment variable in a list of configuration files
-    /// 
+    ///
     /// Returns the first matching value found, or an error if not found in any file
     fn find_env_in_files(&self, files: &[PathBuf], name: &str) -> io::Result<String> {
         for file in files {
@@ -205,7 +310,7 @@ impl UnixEnvironmentAccessor {
     }
 
     /// Writes an environment variable to the first available configuration file
-    /// 
+    ///
     /// Tries to write to existing files first, or creates the first file if none exist
     fn write_env_to_first_available(
         &self,
@@ -233,7 +338,7 @@ impl UnixEnvironmentAccessor {
     }
 
     /// Ensures the PATH environment variable contains the specified entry
-    /// 
+    ///
     /// # Arguments
     /// * `entry` - The entry to add to PATH
     /// * `user` - `true` for user-level, `false` for system-level
