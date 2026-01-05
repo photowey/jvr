@@ -90,6 +90,7 @@ pub fn create_symlink(target: &std::path::Path, link: &std::path::Path) -> std::
     // Create the symlink
     #[cfg(target_os = "windows")]
     {
+        /*
         use std::os::windows::fs;
         // JAVA_HOME is always a directory, so we use symlink_dir
         if target.is_dir() {
@@ -97,6 +98,11 @@ pub fn create_symlink(target: &std::path::Path, link: &std::path::Path) -> std::
         } else {
             fs::symlink_file(target, link)?;
         }
+        */
+
+        // @since 0.3.2
+        // Use junction — no admin needed!
+        junction::create(target, link)?;
     }
     #[cfg(not(target_os = "windows"))]
     {

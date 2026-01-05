@@ -4,21 +4,27 @@ A simple and easy-to-use Java version manager (registry: `jvr`), similar to `Nod
 but it does not follow `nvm`'s naming convention. Otherwise, it would be named `jvm`,
 which could cause command conflicts or ambiguity.
 
-## ✨ What's New in v0.3.1
-**Enhanced environment management & safer PATH handling:**
+-- -
 
-- 🛠 Improved environment handling: JAVA_HOME and $JAVA_HOME/bin PATH updates now fully managed in a single block
-- 🧩 Safer PATH updates: Avoids issues when PATH references JAVA_HOME before it's defined
-- 🔄 Reliable switching: Changing JDK versions automatically updates both JAVA_HOME and PATH in one atomic block
-- 📄 Cleaner shell configs: Adds a dedicated # >>> jvr managed >>> ... <<< block, preventing conflicts with existing user configs
+## **✨ What's New in** `v0.3.2`
+
+**More robust and permission-friendly directory linking on Windows:**
+
+- 🪩 **Junctions instead of symlinks on Windows**: Directory links now use NTFS junctions instead of symbolic links, eliminating the need for administrator privileges or Developer Mode
+- 🔗 **Seamless folder redirection**: Linking a `JDK` directory (`e.g.`, `jdk11`) to a `init($ jvr init /path/to/java_home)` location (`e.g.`, `/path/to/xxx`) works reliably for all standard users on Windows
+- 🧼 **Safe cleanup**: Existing links—whether junctions, `symlinks`, or regular directories—are correctly and safely removed before recreation
+- 💻 **Cross-platform consistency**: Unix-like systems continue using symbolic links as before; only Windows behavior is optimized for usability and security
+
+-- -
+
 
 ## 0.`Platform Support`
 
 `jvr` supports the following operating systems:
 
-- ✅ **Windows** (Windows 10/11)
-- ✅ **Linux** (various distributions)
-- ✅ **macOS** (various versions)
+- ✅ **`Windows`** (Windows 10/11)
+- ✅ **`Linux`** (various distributions)
+- ✅ **`macOS`** (various versions)
 
 ## 1.`Install`
 
@@ -29,7 +35,11 @@ Download the executable file directly from `GitHub` and put it in any `$PATH` pa
 ### 1.2.`Cargo`
 
 ```shell
-cargo install --git https://github.com/photowey/jvr.git [--branch main]
+# 1.github
+$ cargo install --git https://github.com/photowey/jvr.git [--branch main]
+
+# 2.crates.io
+$ cargo install jvr
 ```
 
 ### 1.3.`Build from source`
