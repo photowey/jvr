@@ -11,14 +11,15 @@ env:
 
 jobs:
   build:
-
-    #runs-on: ubuntu-latest
-    runs-on: windows-2022
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install 1.79
+      - name: Install Rust 1.79
         run: rustup install 1.79
 
       - name: Set default toolchain
